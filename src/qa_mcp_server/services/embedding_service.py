@@ -1,37 +1,69 @@
-import hashlib
-import math
-import re
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 
-EMBEDDING_DIMENSION = 384
+EMBEDDING_URL = "http://localhost:8080/embed"
+
+
+class EmbeddingServiceError(Exception):
+    """Raised when the embedding service cannot generate an embedding."""
 
 
 def generate_embedding(text: str) -> list[float]:
     """
-    Generate a deterministic local embedding.
-
-    This lightweight provider has no ML/native dependencies and is intended
-    for local development. It can later be replaced by a production embedding
-    provider without changing the vector-store or MCP layers.
+    Generate a semantic embedding using the local BGE embedding model
+    served by Hugging Face Text Embeddings Inference (TEI).
     """
-    if not text.strip():
+    if not text or not text.strip():
         raise ValueError("Text cannot be empty.")
 
-    vector = [0.0] * EMBEDDING_DIMENSION
+    payload = json.dumps(
+        {
+            "inputs": [text.strip()]
+        }
+    ).encode("utf-8")
 
-    tokens = re.findall(r"[a-z0-9]+", text.lower())
+    request = Request(
+        url=EMBEDDING_URL,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
 
-    for token in tokens:
-        digest = hashlib.sha256(token.encode("utf-8")).digest()
+    try:
+        with urlopen(request, timeout=30) as response:
+            result = json.loads(
+                response.read().decode("utf-8")
+            )
 
-        index = int.from_bytes(digest[:4], "big") % EMBEDDING_DIMENSION
-        sign = 1.0 if digest[4] % 2 == 0 else -1.0
+    except HTTPError as error:
+        body = error.read().decode(
+            "utf-8",
+            errors="replace",
+        )
 
-        vector[index] += sign
+        raise EmbeddingServiceError(
+            f"Embedding service HTTP {error.code}: {body}"
+        ) from error
 
-    magnitude = math.sqrt(sum(value * value for value in vector))
+    except URLError as error:
+        raise EmbeddingServiceError(
+            f"Unable to connect to embedding service: {error.reason}"
+        ) from error
 
-    if magnitude > 0:
-        vector = [value / magnitude for value in vector]
+    if not result or not isinstance(result, list):
+        raise EmbeddingServiceError(
+            "Embedding service returned an invalid response."
+        )
 
-    return vector
+    embedding = result[0]
+
+    if not isinstance(embedding, list):
+        raise EmbeddingServiceError(
+            "Embedding service returned an invalid embedding."
+        )
+
+    return embedding
