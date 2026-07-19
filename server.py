@@ -1,81 +1,73 @@
-import json
-from pathlib import Path
-
 from mcp.server.fastmcp import FastMCP
 
+from src.qa_mcp_server.tools.github import fetch_github_defects
+from src.qa_mcp_server.tools.playwright import summarize_playwright_results
+from src.qa_mcp_server.tools.rag import (
+    find_similar_defects,
+    ingest_defects,
+)
 
-mcp = FastMCP("qa-mcp-server")
+
+mcp = FastMCP("qa-intelligence-mcp")
 
 
 @mcp.tool()
 def health_check() -> str:
-    """Check whether the QA MCP server is running."""
-    return "QA MCP Server is running successfully!"
+    """Check whether the QA Intelligence MCP server is running."""
 
-
-def collect_specs(suites: list) -> list:
-    """Recursively collect all specs from Playwright suites."""
-    specs = []
-
-    for suite in suites:
-        specs.extend(suite.get("specs", []))
-
-        # Playwright suites can contain nested suites
-        nested_suites = suite.get("suites", [])
-
-        if nested_suites:
-            specs.extend(collect_specs(nested_suites))
-
-    return specs
+    return "QA Intelligence MCP Server is running successfully!"
 
 
 @mcp.tool()
-def summarize_playwright_results(report_path: str) -> dict:
-    """Summarize test execution statistics from a Playwright JSON report."""
+def playwright_test_summary(
+    report_path: str,
+    max_failure_details: int = 20,
+) -> dict:
+    """Analyze and summarize a Playwright JSON test report."""
 
-    path = Path(report_path)
+    return summarize_playwright_results(
+        report_path=report_path,
+        max_failure_details=max_failure_details,
+    )
 
-    if not path.exists():
-        return {
-            "error": f"Report file not found: {report_path}"
-        }
 
-    with path.open("r", encoding="utf-8") as file:
-        report = json.load(file)
+@mcp.tool()
+def github_defect_fetcher(
+    owner: str,
+    repo: str,
+    state: str = "open",
+    label: str = "bug",
+    limit: int = 20,
+) -> dict:
+    """Fetch defect issues from a GitHub repository."""
 
-    suites = report.get("suites", [])
+    return fetch_github_defects(
+        owner=owner,
+        repo=repo,
+        state=state,
+        label=label,
+        limit=limit,
+    )
 
-    specs = collect_specs(suites)
 
-    summary = {
-        "total": 0,
-        "passed": 0,
-        "failed": 0,
-        "skipped": 0,
-        "flaky": 0,
-    }
+@mcp.tool()
+def ingest_historical_defects() -> dict:
+    """Ingest historical defects into ChromaDB."""
 
-    for spec in specs:
+    return ingest_defects()
 
-        for test in spec.get("tests", []):
 
-            summary["total"] += 1
+@mcp.tool()
+def similar_defect_search(
+    failure_text: str,
+    top_k: int = 3,
+) -> dict:
+    """Find historical defects semantically similar to a test failure."""
 
-            status = test.get("status")
-
-            if status == "expected":
-                summary["passed"] += 1
-
-            elif status == "unexpected":
-                summary["failed"] += 1
-
-            elif status == "skipped":
-                summary["skipped"] += 1
-
-            elif status == "flaky":
-                summary["flaky"] += 1
-
-    return summary
+    return find_similar_defects(
+        failure_text=failure_text,
+        top_k=top_k,
+    )
 
 
 if __name__ == "__main__":
