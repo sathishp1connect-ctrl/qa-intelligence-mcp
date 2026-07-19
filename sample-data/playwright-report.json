@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "title": "User can login",
+      "status": "passed",
+      "duration": 1250
+    },
+    {
+      "title": "User can logout",
+      "status": "passed",
+      "duration": 850
+    },
+    {
+      "title": "Invalid login shows error",
+      "status": "failed",
+      "duration": 2100
+    },
+    {
+      "title": "Dashboard loads",
+      "status": "flaky",
+      "duration": 3200
+    },
+    {
+      "title": "Admin feature",
+      "status": "skipped",
+      "duration": 0
+    }
+  ]
+}
