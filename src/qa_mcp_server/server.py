@@ -6,9 +6,9 @@ from src.qa_mcp_server.tools.rag import (
     find_similar_defects,
     ingest_defects,
 )
+from src.qa_mcp_server.tools.triage import triage_failure
 
 
-# Create the MCP server
 mcp = FastMCP("qa-intelligence-mcp")
 
 
@@ -67,8 +67,8 @@ def ingest_historical_defects() -> dict:
     """
     Ingest historical defect data into ChromaDB.
 
-    This tool generates embeddings for historical defects
-    and stores them in the ChromaDB vector database.
+    Generates semantic embeddings and stores historical
+    defects in the ChromaDB vector database.
     """
     return ingest_defects()
 
@@ -79,7 +79,7 @@ def similar_defect_search(
     top_k: int = 3,
 ) -> dict:
     """
-    Find historical defects similar to a test failure.
+    Find historical defects semantically similar to a test failure.
 
     Args:
         failure_text: Playwright failure or error text to search for.
@@ -87,6 +87,35 @@ def similar_defect_search(
     """
     return find_similar_defects(
         failure_text=failure_text,
+        top_k=top_k,
+    )
+
+
+@mcp.tool()
+def triage_test_failure(
+    failure_text: str,
+    github_owner: str,
+    github_repo: str,
+    top_k: int = 3,
+) -> dict:
+    """
+    Perform intelligent test failure triage.
+
+    Combines:
+    - Test failure context
+    - Live GitHub defects
+    - Semantically similar historical defects from ChromaDB
+
+    Args:
+        failure_text: Playwright test failure or error text.
+        github_owner: GitHub repository owner.
+        github_repo: GitHub repository name.
+        top_k: Maximum number of similar historical defects to return.
+    """
+    return triage_failure(
+        failure_text=failure_text,
+        github_owner=github_owner,
+        github_repo=github_repo,
         top_k=top_k,
     )
 
