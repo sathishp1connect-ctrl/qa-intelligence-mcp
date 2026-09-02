@@ -7,6 +7,7 @@ from src.qa_mcp_server.tools.rag import (
     ingest_defects,
 )
 from src.qa_mcp_server.tools.triage import triage_failure
+from src.qa_mcp_server.tools.report_analyzer import analyze_merged_report
 
 
 # Create the MCP server
@@ -46,13 +47,6 @@ def github_defect_fetcher(
 ) -> dict:
     """
     Fetch defect issues from a GitHub repository.
-
-    Args:
-        owner: GitHub repository owner.
-        repo: GitHub repository name.
-        state: Issue state: open, closed, or all.
-        label: Issue label to filter by.
-        limit: Maximum number of issues to fetch.
     """
     return fetch_github_defects(
         owner=owner,
@@ -67,9 +61,6 @@ def github_defect_fetcher(
 def ingest_historical_defects() -> dict:
     """
     Ingest historical defect data into ChromaDB.
-
-    Generates semantic embeddings and stores historical
-    defects in the ChromaDB vector database.
     """
     return ingest_defects()
 
@@ -81,10 +72,6 @@ def similar_defect_search(
 ) -> dict:
     """
     Find historical defects semantically similar to a test failure.
-
-    Args:
-        failure_text: Playwright failure or error text to search for.
-        top_k: Maximum number of similar defects to return.
     """
     return find_similar_defects(
         failure_text=failure_text,
@@ -100,18 +87,8 @@ def triage_test_failure(
     top_k: int = 3,
 ) -> dict:
     """
-    Perform intelligent test failure triage.
-
-    Combines:
-    - Test failure context
-    - Live GitHub defects
-    - Semantically similar historical defects from ChromaDB
-
-    Args:
-        failure_text: Playwright test failure or error text.
-        github_owner: GitHub repository owner.
-        github_repo: GitHub repository name.
-        top_k: Maximum number of similar historical defects to return.
+    Perform intelligent test failure triage using
+    GitHub + ChromaDB + RAG.
     """
     return triage_failure(
         failure_text=failure_text,
@@ -119,6 +96,15 @@ def triage_test_failure(
         github_repo=github_repo,
         top_k=top_k,
     )
+
+
+@mcp.tool()
+def regression_execution_summary() -> dict:
+    """
+    Generate an executive QA summary from the merged
+    distributed Playwright execution report.
+    """
+    return analyze_merged_report()
 
 
 if __name__ == "__main__":
