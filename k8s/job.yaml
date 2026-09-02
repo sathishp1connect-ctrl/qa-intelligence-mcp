@@ -5,15 +5,22 @@ metadata:
   name: playwright-regression
 
 spec:
+  completions: 4
+  parallelism: 4
   backoffLimit: 0
 
   template:
+    metadata:
+      labels:
+        app: playwright-regression
+
     spec:
       restartPolicy: Never
 
       containers:
         - name: regression
           image: mcr.microsoft.com/playwright:v1.55.0-jammy
+          imagePullPolicy: IfNotPresent
 
           command:
             - /bin/bash
@@ -21,7 +28,10 @@ spec:
 
           args:
             - |
-              echo "Starting Playwright Regression..."
-              echo "Executing test suite..."
-              sleep 10
+              echo "=================================="
+              echo "Playwright Parallel Regression"
+              echo "Pod Name: $HOSTNAME"
+              echo "=================================="
+              echo "Running regression suite..."
+              sleep 15
               echo "Regression completed successfully."
