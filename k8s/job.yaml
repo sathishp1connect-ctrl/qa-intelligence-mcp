@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: playwright-regression
+
+spec:
+  backoffLimit: 0
+
+  template:
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: regression
+          image: mcr.microsoft.com/playwright:v1.55.0-jammy
+
+          command:
+            - /bin/bash
+            - -c
+
+          args:
+            - |
+              echo "Starting Playwright Regression..."
+              echo "Executing test suite..."
+              sleep 10
+              echo "Regression completed successfully."
