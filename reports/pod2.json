@@ -1,0 +1,16 @@
+{
+  "total": 25,
+  "passed": 24,
+  "failed": 1,
+  "flaky": 0,
+  "tests": [
+    {
+      "name": "Search Test",
+      "status": "passed"
+    },
+    {
+      "name": "Payment Test",
+      "status": "failed"
+    }
+  ]
+}
