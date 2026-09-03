@@ -38,3 +38,16 @@ Thumbs.db
 # Logs
 
 *.log
+
+# Generated reports
+reports/*.json
+
+# Temporary placeholder files
+docker
+kubectl
+git
+dict
+str
+
+# Docker archives
+*.tar
