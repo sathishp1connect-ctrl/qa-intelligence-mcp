@@ -1,42 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   name: qa-intelligence-mcp
-
 spec:
   replicas: 1
-
   selector:
     matchLabels:
       app: qa-intelligence-mcp
-
   template:
     metadata:
       labels:
         app: qa-intelligence-mcp
-
     spec:
       containers:
         - name: qa-intelligence-mcp
-          image: qa-intelligence-mcp:latest
-          imagePullPolicy: Never
+          image: lethalfore/qa-intelligence-mcp:1.1.0
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
 
 ---
 apiVersion: v1
 kind: Service
-
 metadata:
   name: qa-intelligence-service
-
 spec:
   selector:
     app: qa-intelligence-mcp
-
   ports:
     - port: 8000
       targetPort: 8000
-
   type: ClusterIP

@@ -11,7 +11,12 @@ from src.qa_mcp_server.tools.report_analyzer import analyze_merged_report
 
 
 # Create the MCP server
-mcp = FastMCP("qa-intelligence-mcp")
+# Bind to all network interfaces so Kubernetes Service traffic can reach it.
+mcp = FastMCP(
+    "qa-intelligence-mcp",
+    host="0.0.0.0",
+    port=8000,
+)
 
 
 @mcp.tool()
