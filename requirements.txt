@@ -1,3 +1,4 @@
 mcp<2
 pydantic
 pytest
+prometheus-client==0.23.1
