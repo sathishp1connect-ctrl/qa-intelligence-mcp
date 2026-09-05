@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: playwright-regression
+
+spec:
+  completions: 3
+  parallelism: 3
+
+  template:
+    metadata:
+      labels:
+        app: playwright-worker
+
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: playwright
+          image: lethalfore/qa-playwright-worker:1.0.1
+          imagePullPolicy: Always
+
+          command:
+            - npx
+            - playwright
+            - test
+            - tests/smoke.spec.ts
+
+          env:
+            - name: CI
+              value: "true"
