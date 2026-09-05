@@ -9,6 +9,9 @@ from src.qa_mcp_server.tools.rag import (
 from src.qa_mcp_server.tools.triage import triage_failure
 from src.qa_mcp_server.tools.report_analyzer import analyze_merged_report
 
+# NEW
+from aggregator.qa_summary import generate_summary
+
 
 # Create the MCP server
 # Bind to all network interfaces so Kubernetes Service traffic can reach it.
@@ -110,6 +113,16 @@ def regression_execution_summary() -> dict:
     distributed Playwright execution report.
     """
     return analyze_merged_report()
+
+
+# NEW AI EXECUTIVE SUMMARY TOOL
+@mcp.tool()
+def get_qa_summary() -> dict:
+    """
+    Returns an executive QA summary generated from
+    merged distributed Playwright reports.
+    """
+    return generate_summary()
 
 
 if __name__ == "__main__":

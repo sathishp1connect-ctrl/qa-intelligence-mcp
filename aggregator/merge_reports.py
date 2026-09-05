@@ -1,25 +1,21 @@
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, UTC
 
-# Reports directory
-REPORT_DIR = Path(__file__).resolve().parent.parent / "reports"
+REPORT_DIR = Path("reports")
 OUTPUT = REPORT_DIR / "merged-report.json"
 
-# Executive merged summary
 merged = {
-    "generated_at": datetime.utcnow().isoformat() + "Z",
+    "generated_at": datetime.now(UTC).isoformat(),
     "workers": 0,
     "total": 0,
     "passed": 0,
     "failed": 0,
     "flaky": 0,
     "duration_ms": 0,
-    "worker_reports": [],
     "tests": []
 }
 
-# Read every worker report
 for report in REPORT_DIR.glob("*.json"):
     if report.name == "merged-report.json":
         continue
@@ -28,29 +24,40 @@ for report in REPORT_DIR.glob("*.json"):
         data = json.load(f)
 
     merged["workers"] += 1
-    merged["total"] += data.get("total", 0)
-    merged["passed"] += data.get("passed", 0)
-    merged["failed"] += data.get("failed", 0)
-    merged["flaky"] += data.get("flaky", 0)
-    merged["duration_ms"] += data.get("duration_ms", 0)
 
-    merged["worker_reports"].append({
-        "worker": report.stem,
-        "passed": data.get("passed", 0),
-        "failed": data.get("failed", 0),
-        "flaky": data.get("flaky", 0),
-        "duration_ms": data.get("duration_ms", 0)
-    })
+    stats = data.get("stats", {})
+    merged["total"] += stats.get("expected", 0)
+    merged["passed"] += stats.get("expected", 0)
+    merged["failed"] += stats.get("unexpected", 0)
+    merged["flaky"] += stats.get("flaky", 0)
+    merged["duration_ms"] += stats.get("duration", 0)
 
-    merged["tests"].extend(data.get("tests", []))
+    for suite in data.get("suites", []):
+        for spec in suite.get("specs", []):
+            for test in spec.get("tests", []):
+                outcome = test.get("outcome", "unknown")
 
-# Ensure reports folder exists
-REPORT_DIR.mkdir(exist_ok=True)
+                merged["tests"].append({
+                    "title": spec.get("title"),
+                    "file": suite.get("file"),
+                    "status": outcome
+                })
 
-# Write merged report
 with open(OUTPUT, "w", encoding="utf-8") as f:
     json.dump(merged, f, indent=2)
 
-print("Merged report created successfully!")
-print(f"Location: {OUTPUT}")
-print(json.dumps(merged, indent=2))
+print("\n==============================")
+print(" EXECUTIVE QA SUMMARY")
+print("==============================")
+print(f"Workers        : {merged['workers']}")
+print(f"Total Tests    : {merged['total']}")
+print(f"Passed         : {merged['passed']}")
+print(f"Failed         : {merged['failed']}")
+print(f"Flaky          : {merged['flaky']}")
+print(f"Duration (ms)  : {merged['duration_ms']}")
+print("==============================")
+
+status = "PASS" if merged["failed"] == 0 else "FAIL"
+print(f"Overall Status : {status}")
+
+print(f"\nMerged report saved to: {OUTPUT}")

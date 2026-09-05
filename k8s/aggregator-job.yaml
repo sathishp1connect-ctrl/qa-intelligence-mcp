@@ -13,23 +13,28 @@ spec:
     spec:
       restartPolicy: Never
 
-      volumes:
-        - name: reports
-          persistentVolumeClaim:
-            claimName: qa-reports-pvc
-
       containers:
         - name: aggregator
-
-          image: lethalfore/qa-intelligence-mcp:1.2.0
+          image: lethalfore/qa-intelligence-mcp:1.2.3
           imagePullPolicy: Always
 
           workingDir: /app
 
-          volumeMounts:
-            - name: reports
-              mountPath: /app/reports
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: "ap-south-1"
+
+            - name: S3_BUCKET
+              value: "qa-intelligence-reports-sathishp"
 
           command:
-            - python
-            - aggregator/merge_reports.py
+            - sh
+            - -c
+            - |
+              echo "Downloading worker reports..."
+              python aggregator/download_reports.py
+
+              echo "Merging reports..."
+              python aggregator/merge_reports.py
+
+              echo "Aggregation completed."
