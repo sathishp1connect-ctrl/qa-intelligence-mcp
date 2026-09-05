@@ -18,15 +18,35 @@ spec:
 
       containers:
         - name: playwright
-          image: lethalfore/qa-playwright-worker:1.0.1
+          image: lethalfore/qa-playwright-worker:1.2.0
           imagePullPolicy: Always
-
-          command:
-            - npx
-            - playwright
-            - test
-            - tests/smoke.spec.ts
 
           env:
             - name: CI
               value: "true"
+
+            - name: AWS_DEFAULT_REGION
+              value: "ap-south-1"
+
+            - name: S3_BUCKET
+              value: "qa-intelligence-reports-sathishp"
+
+          command:
+            - sh
+            - -c
+            - |
+              export WORKER_NAME=worker-$(hostname | tail -c 2)
+
+              echo "======================================"
+              echo "Running as ${WORKER_NAME}"
+              echo "======================================"
+
+              npx playwright test tests/smoke.spec.ts
+
+              echo "Uploading report to S3..."
+
+              aws s3 cp \
+                reports/${WORKER_NAME}/results.json \
+                s3://${S3_BUCKET}/${WORKER_NAME}.json
+
+              echo "Upload completed."

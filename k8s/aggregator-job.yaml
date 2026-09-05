@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: report-aggregator
+
+spec:
+  template:
+    metadata:
+      labels:
+        app: report-aggregator
+
+    spec:
+      restartPolicy: Never
+
+      volumes:
+        - name: reports
+          persistentVolumeClaim:
+            claimName: qa-reports-pvc
+
+      containers:
+        - name: aggregator
+
+          image: lethalfore/qa-intelligence-mcp:1.2.0
+          imagePullPolicy: Always
+
+          workingDir: /app
+
+          volumeMounts:
+            - name: reports
+              mountPath: /app/reports
+
+          command:
+            - python
+            - aggregator/merge_reports.py
